@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import Product from "../models/product.js";
+import User from "../models/user.js";
 import fs from 'fs';
 import path from 'path';
 
@@ -26,7 +27,7 @@ export const addProduct = async (req, res) => {
     }
 
     // Process images in batches to avoid memory overload
-    const batchSize = 2; // Process 2 images at a time
+    const batchSize = 2;
     const imagesUrl = [];
     
     for (let i = 0; i < req.files.length; i += batchSize) {
@@ -37,13 +38,13 @@ export const addProduct = async (req, res) => {
             const result = await cloudinary.uploader.upload(item.path, {
               resource_type: 'image',
               folder: 'products',
-              quality: 'auto:good' // Optimize image quality
+              quality: 'auto:good'
             });
-            fs.unlinkSync(item.path); // Clean up
+            fs.unlinkSync(item.path);
             return result.secure_url;
           } catch (uploadError) {
             console.error("Upload error for file:", item.originalname, uploadError);
-            fs.unlinkSync(item.path); // Clean up even if failed
+            fs.unlinkSync(item.path);
             throw uploadError;
           }
         })
@@ -51,15 +52,17 @@ export const addProduct = async (req, res) => {
       imagesUrl.push(...batchResults);
     }
 
-    // Create product
+    // Create product with pending status
     const newProduct = await Product.create({
       ...productData,
       image: imagesUrl,
+      seller: req.user.id,
+      status: "pending"
     });
 
     return res.status(201).json({
       success: true,
-      message: "Product added successfully",
+      message: "Product submitted for admin approval",
       product: newProduct
     });
     
@@ -84,22 +87,109 @@ export const addProduct = async (req, res) => {
     });
   }
 }
-// Get Product: /api/product/list
 
+// Get Product List (only approved products): /api/product/list
 export const productList = async (req, res) => {
- try {
-   const products = await Product.find({});
-   res.json({
-     success: true,
-     products
-   })
- } catch (error) {
-  console.log(error.message);
-   res.json({
-     success: false,
-     message: error.message
-   });
- }
+  try {
+    const products = await Product.find({ status: "approved" });
+    res.json({
+      success: true,
+      products
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Get Pending Products (for admin): /api/product/pending
+export const getPendingProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ status: "pending" })
+      .populate('seller', 'name email');
+    res.json({
+      success: true,
+      products
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Approve/Reject Product (admin): /api/product/approve
+export const approveProduct = async (req, res) => {
+  try {
+    const { productId, action, rejectionReason } = req.body;
+    
+    if (!["approve", "reject"].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid action"
+      });
+    }
+
+    const update = { 
+      status: action === "approve" ? "approved" : "rejected" 
+    };
+    
+    if (action === "reject") {
+      update.rejectionReason = rejectionReason || "Product didn't meet our standards";
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      productId,
+      update,
+      { new: true }
+    ).populate('seller', 'email name');
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    // Here you would typically send notification to seller
+    // await sendProductStatusNotification(product.seller.email, product.name, action, rejectionReason);
+
+    res.json({
+      success: true,
+      message: `Product ${action}d successfully`,
+      product
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Get Seller's Products: /api/product/seller
+export const getSellerProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ seller: req.user.id })
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      products
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 }
 
 // Get single product: /api/product/id
@@ -107,33 +197,73 @@ export const productById = async (req, res) => {
   try {
     const { id } = req.body;
     const product = await Product.findById(id);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
     res.json({
       success: true,
       product
-    })
+    });
   } catch (error) {
     console.log(error.message);
-    res.json({
+    res.status(500).json({
       success: false,
       message: error.message
     });
   }
 }
 
-// Change product inStock: /api/product/stock
+// Change product stock: /api/product/stock
 export const changeStock = async (req, res) => {
   try {
-     const { id, inStock } = req.body;
-     await Product.findByIdAndUpdate(id, { inStock });
-     res.json({
-       success: true,
-       message: "Product stock updated successfully"
-     })
+    const { id, inStock } = req.body;
+    
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { inStock },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Product stock updated successfully",
+      product
+    });
   } catch (error) {
     console.log(error.message);
-    res.json({
+    res.status(500).json({
       success: false,
       message: error.message
     });
   }
 }
+
+// Delete Product: /api/product/delete
+// controllers/product.controller.js
+
+export const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await Product.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    res.json({ success: true, message: "Product deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -15,7 +15,8 @@ export const AppContextProvider = ({children}) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(false);
-  const [isSeller, setIsSeller] = useState(false)
+  const [isSeller, setIsSeller] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showUserLogin, setShowUserLogin] = useState(false)
   const [products, setProducts] = useState([])
 
@@ -38,17 +39,17 @@ export const AppContextProvider = ({children}) => {
   }
 
 
-  // Fetch Seller Status
-  const fetchSeller = async () => {
+  // Fetch admin Status
+  const fetchAdmin = async () => {
     try {
-      const {data} = await axios.get("/api/v1/seller/is-auth");
+      const {data} = await axios.get("/api/v1/admin/is-auth");
       if(data.success){
-        setIsSeller(true);
+        setIsAdmin(true);
       }else{
-        setIsSeller(false);
+        setIsAdmin(false);
       }
     } catch (error) {
-      setIsSeller(false);
+      setIsAdmin(false);
     }
   }
 
@@ -127,7 +128,7 @@ export const AppContextProvider = ({children}) => {
 
   useEffect(()=>{
     fetchUser()
-    fetchSeller()
+    fetchAdmin()
     fetchProducts()
   },[])
 // Update Database Cart Items
@@ -149,7 +150,7 @@ export const AppContextProvider = ({children}) => {
 
 
   const value = {navigate, user, setUser, 
-    setIsSeller, isSeller,showUserLogin, 
+    setIsSeller, isSeller,isAdmin, setIsAdmin,showUserLogin, 
     setShowUserLogin, products, currency, 
     addToCart, updateCartItem, removeFromCart,
     cartItems, searchQuery, setSearchQuery,

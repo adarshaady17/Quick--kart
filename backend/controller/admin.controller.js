@@ -1,13 +1,13 @@
 import jwt from 'jsonwebtoken';
 
-export const sellerLogin = async (req, res) => {
+export const adminLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        if (password === process.env.SELLER_PASSWORD && email === process.env.SELLER_EMAIL) {
+        if (password === process.env.ADMIN_PASSWORD && email === process.env.ADMIN_EMAIL) {
             const token = jwt.sign({ email }, process.env.SECRET_KEY, { expiresIn: '7d' });
 
-            res.cookie('sellerToken', token, {
+            res.cookie('adminToken', token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
@@ -23,7 +23,7 @@ export const sellerLogin = async (req, res) => {
     }
 }
 
-export const isSellerAuth = async (req, res) => {
+export const isAdminAuth = async (req, res) => {
     try {
         return res.json({ success: true })
     } catch (error) {
@@ -32,9 +32,9 @@ export const isSellerAuth = async (req, res) => {
     }
 }
 
-export const sellerLogout = async (req, res) => {
+export const adminLogout = async (req, res) => {
     try {
-        res.clearCookie('sellerToken', {
+        res.clearCookie('adminToken', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',

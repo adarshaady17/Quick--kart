@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 const orderSchema = new mongoose.Schema(
   {
     userId: {
-      type: String,
+      type:String,
       required: true,
-      ref: "user",
+      ref: "User",
     },
     items: [
       {
@@ -30,13 +30,14 @@ const orderSchema = new mongoose.Schema(
       required: true,
       ref: "address",
     },
-
     status: {
       type: String,
+      enum: ["Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"],
       default: "Order Placed",
     },
-    paymentType: {
+     paymentType: {
       type: String,
+      enum: ["COD", "Online"],
       required: true,
     },
     isPaid: {

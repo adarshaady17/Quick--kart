@@ -5,9 +5,9 @@ import bcrypt from "bcryptjs";
 
 export const registration = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password,role } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password ||!role) {
       return res.status(400).json({ message: "All fields are required", success: false });
     }
 
@@ -24,6 +24,7 @@ export const registration = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      role,
       otp,
       otpExpiry,
       isVerified: false // Explicitly set to false
@@ -130,9 +131,9 @@ export const resendOTP = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || !role) {
       return res.json({
         success: false,
         message: "Please fill all the fields",
@@ -165,6 +166,13 @@ export const login = async (req, res) => {
       });
     }
 
+    if (role !== user.role) {
+      return res.status(400).json({
+        message: "Account doesn't exit with current role",
+        success: false,
+      });
+    }
+
     const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
       expiresIn: "7d",
     });
@@ -179,7 +187,7 @@ export const login = async (req, res) => {
     return res.json({ 
       success: true,
       message: "Login successful",
-      user: { email: user.email, name: user.name },
+      user: { email: user.email, name: user.name,role:user.role },
     });
   } catch (error) {
     console.log(error.message);

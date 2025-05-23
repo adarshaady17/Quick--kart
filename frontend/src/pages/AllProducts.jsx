@@ -23,7 +23,7 @@ const AllProducts = () => {
         <p className='text-2xl font-medium uppercase'>All products</p>
         <div className='w-16 h-0.5  bg-indigo-500 rounded-full'></div>
     </div>
-        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 lg:grid-cols-auto mt-6'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6'>
             {filterdProducts.filter((product)=>product.inStock).map((product,index)=>(
                 <ProductCart key={index} product={product}/>
             ))}

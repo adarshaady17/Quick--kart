@@ -3,8 +3,8 @@ import { useAppContext } from '../../context/AppContext';
 import axios from 'axios';
 import { toast } from 'react-toastify'; // Add this import
 
-const SellerLogin = () => {
-    const { isSeller, setIsSeller, navigate } = useAppContext();
+const AdminLogin = () => {
+    const { isAdmin, setIsAdmin, navigate } = useAppContext();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false); // Add loading state
@@ -20,11 +20,11 @@ const SellerLogin = () => {
 
         try {
             setLoading(true);
-            const { data } = await axios.post('/api/v1/seller/login', { email, password });
+            const { data } = await axios.post('/api/v1/admin/login', { email, password });
             
             if (data.success) {
-                setIsSeller(true);
-                navigate('/seller');
+                setIsAdmin(true);
+                navigate('/admin');
                 toast.success('Login successful');
             } else {
                 toast.error(data.message || 'Login failed');
@@ -38,18 +38,18 @@ const SellerLogin = () => {
     };
 
     useEffect(() => {
-        if (isSeller) {
-            navigate("/seller");
+        if (isAdmin) {
+            navigate("/admin");
         }
-    }, [isSeller, navigate]);
+    }, [isAdmin, navigate]);
 
-    if (isSeller) return null;
+    if (isAdmin) return null;
 
     return (
         <form onSubmit={onSubmitHandler} className='min-h-screen flex items-center text-sm text-gray-600'>
             <div className='flex flex-col gap-5 m-auto items-start p-8 py-12 min-w-80 sm:min-w-88 rounded-lg shadow-xl border border-gray-200'>
                 <p className='text-2xl font-medium m-auto'>
-                    <span className='text-indigo-500'>Seller</span> Login
+                    <span className='text-indigo-500'>Admin</span> Login
                 </p>
                 
                 <div className='w-full'>
@@ -90,4 +90,4 @@ const SellerLogin = () => {
     );
 };
 
-export default SellerLogin;
+export default AdminLogin;

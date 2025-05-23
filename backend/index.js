@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import UserRouter from "./routes/user.routes.js";
 import connectCloudinary from "./utils/cloudinary.js";
 import cors from "cors";
-import SellerRouter from "./routes/seller.routers.js";
+import AdminRouter from "./routes/admin.routers.js";
 import ProductRouter from "./routes/product.routes.js";
 import CartRouter from "./routes/cart.router.js";
 import AddressRouter from "./routes/address.routes.js";
@@ -40,7 +40,7 @@ app.use(cors({
 const PORT=process.env.PORT || 5000;
 
 app.use("/api/v1/user",UserRouter);
-app.use("/api/v1/seller",SellerRouter);
+app.use("/api/v1/admin",AdminRouter);
 app.use("/api/v1/product",ProductRouter);
 app.use("/api/v1/cart",CartRouter);
 app.use("/api/v1/address",AddressRouter);

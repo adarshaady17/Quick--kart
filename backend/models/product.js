@@ -30,6 +30,20 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    rejectionReason: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

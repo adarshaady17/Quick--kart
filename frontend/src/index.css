@@ -13,3 +13,7 @@
 .no-scrollbar::-webkit-scrollbar{
     display: none;
 }
+
+.input {
+  @apply border border-gray-300 rounded w-full p-2 mt-1 outline-indigo-500;
+}

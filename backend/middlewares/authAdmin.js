@@ -1,14 +1,14 @@
 import jwt from 'jsonwebtoken';
 
-const authSeller=async(req,res,next)=>{
-    const {sellerToken}=req.cookies;
-    if(!sellerToken){
+const authAdmin=async(req,res,next)=>{
+    const {adminToken}=req.cookies;
+    if(!adminToken){
         return res.json({success:false,message:'Not Authorized'});
     }
 
     try{
-        const tokenDecode=jwt.verify(sellerToken,process.env.SECRET_KEY);
-        if(tokenDecode.email === process.env.SELLER_EMAIL){
+        const tokenDecode=jwt.verify(adminToken,process.env.SECRET_KEY);
+        if(tokenDecode.email === process.env.ADMIN_EMAIL){
             next();
         }else{
             return res.json({success:false,message:'Not Authorized'});
@@ -18,4 +18,4 @@ const authSeller=async(req,res,next)=>{
     }
 }
 
-export default authSeller;
+export default authAdmin;

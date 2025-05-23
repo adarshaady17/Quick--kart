@@ -3,20 +3,20 @@ import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 
 const Login = () => {
-  const { setShowUserLogin, setUser, user, axios, navigate } = useAppContext();
+  const { setShowUserLogin, setUser, axios, navigate } = useAppContext();
 
   const [state, setState] = useState("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [role, setRole] = useState("user");
   const [showOtpField, setShowOtpField] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
   const [isResending, setIsResending] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Timer for resend OTP cooldown
   useEffect(() => {
     let interval;
     if (resendTimer > 0) {
@@ -27,18 +27,24 @@ const Login = () => {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
+  const handleAdminLoginClick = () => {
+    setShowUserLogin(false);
+    navigate("/admin");
+  };
+
   const onSubmitHandler = async (event) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+
     try {
-      event.preventDefault();
-      setIsSubmitting(true);
-      
       if (state === "register" && !showOtpField) {
         const { data } = await axios.post(`/api/v1/user/register`, {
           name,
           email,
           password,
+          role,
         });
-        
+
         if (data.success) {
           setRegisteredEmail(email);
           setShowOtpField(true);
@@ -55,11 +61,12 @@ const Login = () => {
           email: registeredEmail,
           otp,
         });
-        
+
         if (data.success) {
-          toast.success("Email verified successfully!");
-          navigate("/");
           setUser(data.user);
+          toast.success("Email verified successfully!");
+          if (role === "seller") navigate("/seller");
+          else navigate("/");
           setShowUserLogin(false);
         } else {
           toast.error(data.message);
@@ -71,20 +78,20 @@ const Login = () => {
         const { data } = await axios.post(`/api/v1/user/login`, {
           email,
           password,
+          role,
         });
-        
+
         if (data.success) {
-          navigate("/");
           setUser(data.user);
           setShowUserLogin(false);
+          if (data.user.role === "seller") navigate("/seller");
+          else navigate("/");
         } else {
           toast.error(data.message);
         }
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message;
-      toast.error(errorMessage);
-      console.error("Registration/Login error:", error);
+      toast.error(error.response?.data?.message || error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -92,13 +99,13 @@ const Login = () => {
 
   const resendOtp = async () => {
     if (resendTimer > 0 || isResending) return;
-    
+
     setIsResending(true);
     try {
       const { data } = await axios.post(`/api/v1/user/resend-otp`, {
         email: registeredEmail,
       });
-      
+
       if (data.success) {
         setResendTimer(30);
         toast.success("New OTP sent to your email");
@@ -165,41 +172,64 @@ const Login = () => {
                 disabled={isSubmitting}
               />
             </div>
+            <div className="w-full">
+              <p>Role</p>
+              <div className="flex gap-4 mt-1">
+                <label className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="user"
+                    checked={role === "user"}
+                    onChange={() => setRole("user")}
+                    disabled={isSubmitting}
+                  />
+                  User
+                </label>
+                <label className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="seller"
+                    checked={role === "seller"}
+                    onChange={() => setRole("seller")}
+                    disabled={isSubmitting}
+                  />
+                  Seller
+                </label>
+              </div>
+            </div>
           </>
         )}
 
         {state === "register" && showOtpField && (
-          <>
-            <div className="w-full">
-              <p>Enter OTP sent to {registeredEmail}</p>
-              <input
-                onChange={(e) => setOtp(e.target.value)}
-                value={otp}
-                placeholder="6-digit OTP"
-                className="border border-gray-200 rounded w-full p-2 mt-1 outline-indigo-500"
-                type="text"
-                required
-                maxLength="6"
-                disabled={isSubmitting}
-              />
-              <div className="text-sm mt-1">
-                {resendTimer > 0 ? (
-                  <span className="text-gray-500">
-                    Resend OTP in {resendTimer}s
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={resendOtp}
-                    disabled={isResending || isSubmitting}
-                    className={`text-indigo-500 ${isResending ? 'opacity-50' : 'hover:underline cursor-pointer'}`}
-                  >
-                    {isResending ? 'Sending...' : 'Resend OTP'}
-                  </button>
-                )}
-              </div>
+          <div className="w-full">
+            <p>Enter OTP sent to {registeredEmail}</p>
+            <input
+              onChange={(e) => setOtp(e.target.value)}
+              value={otp}
+              placeholder="6-digit OTP"
+              className="border border-gray-200 rounded w-full p-2 mt-1 outline-indigo-500"
+              type="text"
+              required
+              maxLength="6"
+              disabled={isSubmitting}
+            />
+            <div className="text-sm mt-1">
+              {resendTimer > 0 ? (
+                <span className="text-gray-500">Resend OTP in {resendTimer}s</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={resendOtp}
+                  disabled={isResending || isSubmitting}
+                  className={`text-indigo-500 ${isResending ? 'opacity-50' : 'hover:underline cursor-pointer'}`}
+                >
+                  {isResending ? 'Sending...' : 'Resend OTP'}
+                </button>
+              )}
             </div>
-          </>
+          </div>
         )}
 
         {state === "login" && (
@@ -228,38 +258,50 @@ const Login = () => {
                 disabled={isSubmitting}
               />
             </div>
+            <div className="w-full">
+              <p>Role</p>
+              <div className="flex gap-4 mt-1">
+                <label className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="user"
+                    checked={role === "user"}
+                    onChange={() => setRole("user")}
+                    disabled={isSubmitting}
+                  />
+                  User
+                </label>
+                <label className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="seller"
+                    checked={role === "seller"}
+                    onChange={() => setRole("seller")}
+                    disabled={isSubmitting}
+                  />
+                  Seller
+                </label>
+              </div>
+            </div>
           </>
         )}
 
-        {state === "register" ? (
-          <p>
-            Already have account?{" "}
-            <span
-              onClick={() => {
-                setState("login");
-                setShowOtpField(false);
-              }}
-              className="text-indigo-500 cursor-pointer"
-            >
-              click here
-            </span>
-          </p>
-        ) : (
-          <p>
-            Create an account?{" "}
-            <span
-              onClick={() => {
-                setState("register");
-                setShowOtpField(false);
-              }}
-              className="text-indigo-500 cursor-pointer"
-            >
-              click here
-            </span>
-          </p>
-        )}
+        <p>
+          {state === "register" ? "Already have an account?" : "Create an account?"}{" "}
+          <span
+            onClick={() => {
+              setState(state === "login" ? "register" : "login");
+              setShowOtpField(false);
+            }}
+            className="text-indigo-500 cursor-pointer"
+          >
+            click here
+          </span>
+        </p>
 
-        <button 
+        <button
           type="submit"
           className={`bg-indigo-500 hover:bg-indigo-300 transition-all text-white w-full py-2 rounded-md cursor-pointer flex items-center justify-center ${
             isSubmitting ? 'opacity-75' : ''
@@ -272,24 +314,27 @@ const Login = () => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              {state === "register" 
-                ? (showOtpField ? "Verifying..." : "Registering...") 
+              {state === "register"
+                ? showOtpField
+                  ? "Verifying..."
+                  : "Registering..."
                 : "Logging in..."}
             </>
-          ) : (
-            state === "register" 
-              ? (showOtpField ? "Verify OTP" : "Create Account") 
-              : "Login"
-          )}
+          ) : state === "register"
+            ? showOtpField
+              ? "Verify OTP"
+              : "Create Account"
+            : "Login"}
+        </button>
+        
+        <button
+          type="button"
+          onClick={handleAdminLoginClick}
+          className="w-full py-2 rounded-md border border-indigo-500 text-indigo-500 hover:bg-indigo-50 transition-all"
+        >
+          Admin Login
         </button>
       </form>
-
-      <button
-        onClick={() => navigate("/seller")}
-        className="fixed bottom-4 right-4 bg-indigo-600 hover:bg-indigo-300 text-white px-4 py-2 rounded shadow-md transition-all z-40"
-      >
-        For Seller
-      </button>
     </div>
   );
 };
