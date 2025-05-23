@@ -39,6 +39,8 @@ app.use(cors({
 
 const PORT=process.env.PORT || 5000;
 
+app.get('/',(req,res)=>res.send("API is working"));
+
 app.use("/api/v1/user",UserRouter);
 app.use("/api/v1/admin",AdminRouter);
 app.use("/api/v1/product",ProductRouter);
