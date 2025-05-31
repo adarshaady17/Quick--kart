@@ -1,8 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import Product from "../models/product.js";
-import User from "../models/user.js";
 import fs from 'fs';
-import path from 'path';
 
 // Add Product: /api/product/add
 export const addProduct = async (req, res) => {
@@ -156,9 +154,6 @@ export const approveProduct = async (req, res) => {
       });
     }
 
-    // Here you would typically send notification to seller
-    // await sendProductStatusNotification(product.seller.email, product.name, action, rejectionReason);
-
     res.json({
       success: true,
       message: `Product ${action}d successfully`,
@@ -249,9 +244,6 @@ export const changeStock = async (req, res) => {
     });
   }
 }
-
-// Delete Product: /api/product/delete
-// controllers/product.controller.js
 
 export const deleteProduct = async (req, res) => {
   try {

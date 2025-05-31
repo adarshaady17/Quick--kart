@@ -1,7 +1,6 @@
 import Razorpay from "razorpay";
 import Order from "../models/order.js";
 import Product from "../models/product.js";
-import User from "../models/user.js";
 
 
 export const placeOrderRazor = async (req, res) => {
