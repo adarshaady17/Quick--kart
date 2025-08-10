@@ -1,19 +1,23 @@
 import User from "../models/user.js";
+import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-
 
 export const registration = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    if (!name || !email || !password ||!role) {
-      return res.status(400).json({ message: "All fields are required", success: false });
+    if (!name || !email || !password || !role) {
+      return res
+        .status(400)
+        .json({ message: "All fields are required", success: false });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ message: "User already exists", success: false });
+      return res
+        .status(409)
+        .json({ message: "User already exists", success: false });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -27,14 +31,14 @@ export const registration = async (req, res) => {
       role,
       otp,
       otpExpiry,
-      isVerified: false // Explicitly set to false
+      isVerified: false, // Explicitly set to false
     });
 
     // Don't create token yet - wait for verification
     return res.status(201).json({
       message: "OTP sent to your email. Please verify.",
       success: true,
-      email: user.email // Return email for verification
+      email: user.email, // Return email for verification
     });
   } catch (error) {
     console.error("Registration error:", error.message);
@@ -46,9 +50,11 @@ export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const user = await User.findOne({ email }).select('+otp +otpExpiry');
+    const user = await User.findOne({ email }).select("+otp +otpExpiry");
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     if (user.isVerified) {
@@ -56,7 +62,9 @@ export const verifyOTP = async (req, res) => {
     }
 
     if (user.otp !== otp || user.otpExpiry < Date.now()) {
-      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired OTP" });
     }
 
     // Mark as verified and clear OTP fields
@@ -77,10 +85,10 @@ export const verifyOTP = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       message: "Email verified successfully",
-      user: { email: user.email, name: user.name }
+      user: { email: user.email, name: user.name },
     });
   } catch (error) {
     console.error("OTP verification error:", error.message);
@@ -94,16 +102,16 @@ export const resendOTP = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "User not found" 
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
       });
     }
 
     if (user.isVerified) {
-      return res.json({ 
-        success: true, 
-        message: "Email already verified" 
+      return res.json({
+        success: true,
+        message: "Email already verified",
       });
     }
 
@@ -116,15 +124,15 @@ export const resendOTP = async (req, res) => {
     user.otpExpiry = otpExpiry;
     await user.save();
 
-    return res.json({ 
-      success: true, 
-      message: "New OTP sent successfully" 
+    return res.json({
+      success: true,
+      message: "New OTP sent successfully",
     });
   } catch (error) {
     console.error("Resend OTP error:", error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error" 
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
@@ -143,26 +151,26 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.json({ 
-        success: false, 
-        message: "User not found" 
+      return res.json({
+        success: false,
+        message: "User not found",
       });
     }
 
     // Check if user is verified
     if (!user.isVerified) {
-      return res.json({ 
-        success: false, 
-        message: "Please verify your email first" 
+      return res.json({
+        success: false,
+        message: "Please verify your email first",
       });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.json({ 
-        success: false, 
-        message: "Invalid Password" 
+      return res.json({
+        success: false,
+        message: "Invalid Password",
       });
     }
 
@@ -183,53 +191,75 @@ export const login = async (req, res) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    
-    return res.json({ 
+
+    return res.json({
       success: true,
       message: "Login successful",
-      user: { email: user.email, name: user.name,role:user.role },
+      user: { email: user.email, name: user.name, role: user.role },
     });
   } catch (error) {
     console.log(error.message);
-    res.json({ 
-      success: false, 
-      message: error.message 
+    res.json({
+      success: false,
+      message: error.message,
     });
   }
 };
 
-  export const isAuth = async (req, res) => {
-    try {
-      const { id: userId } = req.user; 
-  
-      if (!userId) {
-          return res.json({ success: false, message: "Unauthorized" });
-      }
-      const user = await User.findById(userId).select("-password ");
-  
-      return res.json({ success: true, user });
-    } catch (error) {
-      console.log(error.message);
-      res.json({ success: false, message: error.message });
+export const isAuth = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+
+    if (!userId) {
+      return res.json({ success: false, message: "Unauthorized" });
     }
-  };
-  
-  export const logout = async (req, res) => {
-    try {
-    
-      res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: "/",
-  
-      });
-  
-      return res.json({ success: true, message: "Logged out successfully" });
-    } catch (error) {
-      console.log(error.message);
-      res.json({ success: false, message: error.message });
+    const user = await User.findById(userId).select("-password ");
+
+    return res.json({ success: true, user });
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
+
+    return res.json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Update profile photo
+export const updateProfilePhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded" });
     }
-  };
-  
+    // upload to cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "image",
+      folder: "profile_photos",
+      quality: "auto:good",
+    });
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { profilePhoto: result.secure_url },
+      { new: true }
+    ).select("-password");
+    return res.json({ success: true, message: "Profile photo updated", user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

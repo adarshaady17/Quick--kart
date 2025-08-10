@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import Product from "../models/product.js";
-import fs from 'fs';
+import fs from "fs";
 
 // Add Product: /api/product/add
 export const addProduct = async (req, res) => {
@@ -27,21 +27,25 @@ export const addProduct = async (req, res) => {
     // Process images in batches to avoid memory overload
     const batchSize = 2;
     const imagesUrl = [];
-    
+
     for (let i = 0; i < req.files.length; i += batchSize) {
       const batch = req.files.slice(i, i + batchSize);
       const batchResults = await Promise.all(
-        batch.map(async (item) => {   
+        batch.map(async (item) => {
           try {
             const result = await cloudinary.uploader.upload(item.path, {
-              resource_type: 'image',
-              folder: 'products',
-              quality: 'auto:good'
+              resource_type: "image",
+              folder: "products",
+              quality: "auto:good",
             });
             fs.unlinkSync(item.path);
             return result.secure_url;
           } catch (uploadError) {
-            console.error("Upload error for file:", item.originalname, uploadError);
+            console.error(
+              "Upload error for file:",
+              item.originalname,
+              uploadError
+            );
             fs.unlinkSync(item.path);
             throw uploadError;
           }
@@ -55,21 +59,20 @@ export const addProduct = async (req, res) => {
       ...productData,
       image: imagesUrl,
       seller: req.user.id,
-      status: "pending"
+      status: "pending",
     });
 
     return res.status(201).json({
       success: true,
       message: "Product submitted for admin approval",
-      product: newProduct
+      product: newProduct,
     });
-    
   } catch (error) {
     console.error("Error in addProduct:", error);
 
     // Clean up any remaining files
     if (req.files) {
-      req.files.forEach(file => {
+      req.files.forEach((file) => {
         if (fs.existsSync(file.path)) {
           fs.unlinkSync(file.path);
         }
@@ -78,146 +81,151 @@ export const addProduct = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message.includes('timeout') 
-        ? "Upload timed out. Please try smaller files or fewer images." 
+      message: error.message.includes("timeout")
+        ? "Upload timed out. Please try smaller files or fewer images."
         : "Failed to add product",
-      error: error.message
+      error: error.message,
     });
   }
-}
+};
 
 // Get Product List (only approved products): /api/product/list
 export const productList = async (req, res) => {
   try {
-    const products = await Product.find({ status: "approved" });
+    const products = await Product.find({ status: "approved" }).populate(
+      "seller",
+      "name"
+    );
     res.json({
       success: true,
-      products
+      products,
     });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
-}
+};
 
 // Get Pending Products (for admin): /api/product/pending
 export const getPendingProducts = async (req, res) => {
   try {
-    const products = await Product.find({ status: "pending" })
-      .populate('seller', 'name email');
+    const products = await Product.find({ status: "pending" }).populate(
+      "seller",
+      "name email"
+    );
     res.json({
       success: true,
-      products
+      products,
     });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
-}
+};
 
 // Approve/Reject Product (admin): /api/product/approve
 export const approveProduct = async (req, res) => {
   try {
     const { productId, action, rejectionReason } = req.body;
-    
+
     if (!["approve", "reject"].includes(action)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid action"
+        message: "Invalid action",
       });
     }
 
-    const update = { 
-      status: action === "approve" ? "approved" : "rejected" 
+    const update = {
+      status: action === "approve" ? "approved" : "rejected",
     };
-    
+
     if (action === "reject") {
-      update.rejectionReason = rejectionReason || "Product didn't meet our standards";
+      update.rejectionReason =
+        rejectionReason || "Product didn't meet our standards";
     }
 
-    const product = await Product.findByIdAndUpdate(
-      productId,
-      update,
-      { new: true }
-    ).populate('seller', 'email name');
+    const product = await Product.findByIdAndUpdate(productId, update, {
+      new: true,
+    }).populate("seller", "email name");
 
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found"
+        message: "Product not found",
       });
     }
 
     res.json({
       success: true,
       message: `Product ${action}d successfully`,
-      product
+      product,
     });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
-}
+};
 
 // Get Seller's Products: /api/product/seller
 export const getSellerProducts = async (req, res) => {
   try {
-    const products = await Product.find({ seller: req.user.id })
-      .sort({ createdAt: -1 });
-    
+    const products = await Product.find({ seller: req.user.id }).sort({
+      createdAt: -1,
+    });
+
     res.json({
       success: true,
-      products
+      products,
     });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
-}
+};
 
 // Get single product: /api/product/id
 export const productById = async (req, res) => {
   try {
     const { id } = req.body;
     const product = await Product.findById(id);
-    
+
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found"
+        message: "Product not found",
       });
     }
 
     res.json({
       success: true,
-      product
+      product,
     });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
-}
+};
 
 // Change product stock: /api/product/stock
 export const changeStock = async (req, res) => {
   try {
     const { id, inStock } = req.body;
-    
+
     const product = await Product.findByIdAndUpdate(
       id,
       { inStock },
@@ -227,23 +235,23 @@ export const changeStock = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found"
+        message: "Product not found",
       });
     }
 
     res.json({
       success: true,
       message: "Product stock updated successfully",
-      product
+      product,
     });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
-}
+};
 
 export const deleteProduct = async (req, res) => {
   try {
@@ -251,7 +259,9 @@ export const deleteProduct = async (req, res) => {
 
     const deleted = await Product.findByIdAndDelete(id);
     if (!deleted) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
 
     res.json({ success: true, message: "Product deleted successfully" });

@@ -22,12 +22,15 @@ import AdminProducts from "./components/Admin/AdminProducts.jsx";
 import AdminOrders from "./components/Admin/AdminOrders.jsx";
 import AdminStock from "./components/Admin/AdminStock.jsx";
 import AdminAllProducts from "./components/Admin/AdminAllProducts.jsx";
+import SellerLogin from "./components/SellerLogin.jsx";
+import SellerSignup from "./components/SellerSignup.jsx";
+import UserProfile from "./pages/UserProfile.jsx";
 
 const App = () => {
   const location = useLocation();
   const isSellerPath = location.pathname.includes("seller");
   const isAdminPath = location.pathname.includes("admin");
-  const { showUserLogin, isAdmin } = useAppContext();
+  const { showUserLogin, isAdmin, user } = useAppContext();
 
   return (
     <div className="text-default min-h-screen text-gray-700 bg-white">
@@ -48,23 +51,34 @@ const App = () => {
           <Route path="/products/:category" element={<ProductCategory />} />
           <Route path="/products/:category/:id" element={<ProductDetails />} />
           <Route path="/add-address" element={<AddAddress />} />
+          <Route path="/profile" element={<UserProfile />} />
           <Route path="/my-orders" element={<MyOrders />} />
+          {/* Admin login at /admin */}
+          <Route path="/admin" element={<AdminLogin />} />
+
+          {/* Protected admin routes under /admin/* */}
           <Route
-            path="/admin"
+            path="/admin/*"
             element={isAdmin ? <AdminLayout /> : <AdminLogin />}
           >
-            <Route index element={<AdminProducts />} />
             <Route path="approvals" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="stock" element={<AdminStock />} />
             <Route path="products" element={<AdminAllProducts />} />
           </Route>
 
-          <Route path="/seller" element={<SellerLayout />}>
+          <Route
+            path="/seller/*"
+            element={
+              user?.role === "seller" ? <SellerLayout /> : <SellerLogin />
+            }
+          >
             <Route index element={<AddProduct />} />
             <Route path="product-list" element={<ProductList />} />
             <Route path="orders" element={<Orders />} />
           </Route>
+          <Route path="/seller/login" element={<SellerLogin />} />
+          <Route path="/seller/signup" element={<SellerSignup />} />
         </Routes>
       </div>
       {!(isSellerPath || isAdminPath) && <Footer />}

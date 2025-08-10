@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext.jsx';
-import { assets } from '../assets/assets.js';
-import toast from 'react-hot-toast';
-
+import React, { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
+import { useAppContext } from "../context/AppContext.jsx";
+import { assets } from "../assets/assets.js";
+import toast from "react-hot-toast";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -20,11 +19,11 @@ const Navbar = () => {
 
   const logout = async () => {
     try {
-      const { data } = await axios.get('/api/v1/user/logout');
+      const { data } = await axios.get("/api/v1/user/logout");
       if (data.success) {
         toast.success(data.message);
         setUser(null);
-        navigate('/');
+        navigate("/");
       } else {
         toast.error(data.message);
       }
@@ -35,7 +34,7 @@ const Navbar = () => {
 
   useEffect(() => {
     if (searchQuery.length > 0) {
-      navigate('/products');
+      navigate("/products");
     }
   }, [searchQuery]);
 
@@ -45,11 +44,7 @@ const Navbar = () => {
         {/* Logo & Brand */}
         <div className="flex items-center gap-2">
           <NavLink to="/" onClick={() => setOpen(false)}>
-            <img
-              className="h-9"
-              src={assets.logo}
-              alt="Quick-Kart Logo"
-            />
+            <img className="h-9" src={assets.logo} alt="Quick-Kart Logo" />
           </NavLink>
         </div>
 
@@ -70,8 +65,15 @@ const Navbar = () => {
           </div>
 
           {/* Cart */}
-          <div onClick={() => navigate('/cart')} className="relative cursor-pointer">
-            <img src={assets.nav_cart_icon} alt="cart" className="w-6 opacity-80" />
+          <div
+            onClick={() => navigate("/cart")}
+            className="relative cursor-pointer"
+          >
+            <img
+              src={assets.nav_cart_icon}
+              alt="cart"
+              className="w-6 opacity-80"
+            />
             <button className="absolute -top-2 -right-3 text-xs text-white bg-indigo-500 w-[18px] h-[18px] rounded-full">
               {getCartCount()}
             </button>
@@ -92,14 +94,23 @@ const Navbar = () => {
                   Welcome {user.name} ({user.role})
                 </p>
                 <img
-                  className="w-10 cursor-pointer"
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer border"
                   alt="user"
-                  src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                  src={
+                    user?.profilePhoto ||
+                    "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                  }
                 />
               </div>
               <ul className="hidden group-hover:block absolute top-12 right-0 bg-white shadow border border-gray-200 py-2.5 w-36 rounded-md text-sm z-40">
                 <li
-                  onClick={() => navigate('/my-orders')}
+                  onClick={() => navigate("/profile")}
+                  className="p-1.5 pl-3 hover:bg-indigo-50 cursor-pointer"
+                >
+                  Profile
+                </li>
+                <li
+                  onClick={() => navigate("/my-orders")}
                   className="p-1.5 pl-3 hover:bg-indigo-50 cursor-pointer"
                 >
                   My Orders
@@ -126,12 +137,21 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {open && (
         <div className="sm:hidden bg-white border-t border-gray-200 shadow-md absolute top-16 left-0 w-full z-50">
-          <NavLink to="/" onClick={() => setOpen(false)} className="block px-6 py-3 border-b">
+          <NavLink
+            to="/"
+            onClick={() => setOpen(false)}
+            className="block px-6 py-3 border-b"
+          >
             Home
           </NavLink>
-          <NavLink to="/products" onClick={() => setOpen(false)} className="block px-6 py-3 border-b">
+          <NavLink
+            to="/products"
+            onClick={() => setOpen(false)}
+            className="block px-6 py-3 border-b"
+          >
             All Products
           </NavLink>
+
           {!user ? (
             <button
               onClick={() => {

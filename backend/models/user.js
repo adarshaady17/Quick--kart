@@ -1,72 +1,79 @@
 import mongoose from "mongoose";
-import mailSender from '../services/emailService.js';
+import mailSender from "../services/emailService.js";
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     email: {
-        type: String,
-        required: true, 
-        unique: true
-    }, 
-    password: {
-        type: String,
-        required: true 
+      type: String,
+      required: true,
+      unique: true,
     },
-   role: {
-  type: String,
-  enum: ["user", "seller"],
-  required: true,
-  default: "user"
-},
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["user", "seller"],
+      required: true,
+      default: "user",
+    },
     cartItems: {
-        type: Object,
-        default: {}
+      type: Object,
+      default: {},
     },
     otp: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
     otpExpiry: {
-        type: Date,
-        select: false
+      type: Date,
+      select: false,
     },
     isVerified: {
-        type: Boolean,
-        default: false
-    }
-}, { minimize: false });
+      type: Boolean,
+      default: false,
+    },
+    profilePhoto: {
+      type: String,
+      default: "",
+    },
+  },
+  { minimize: false }
+);
 
 async function sendVerificationEmail(email, otp) {
-    try {
-        const mailResponse = await mailSender(
-            email,
-            "Verify Your Quick-Kart Account",
-            `<div>
+  try {
+    const mailResponse = await mailSender(
+      email,
+      "Verify Your Quick-Kart Account",
+      `<div>
                 <h2>Quick-Kart Verification Code</h2>
                 <p>Your OTP is: <strong>${otp}</strong></p>
                 <p>This code will expire in 10 minutes.</p>
             </div>`
-        );
-        return mailResponse;
-    } catch (error) {
-        console.error("Error sending verification email:", error);
-        throw error;
-    }
+    );
+    return mailResponse;
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    throw error;
+  }
 }
 
 userSchema.pre("save", async function (next) {
-    if (this.isModified('otp') && this.otp && !this.isVerified) {
-        try {
-            await sendVerificationEmail(this.email, this.otp);
-        } catch (error) {
-            return next(error);
-        }
+  if (this.isModified("otp") && this.otp && !this.isVerified) {
+    try {
+      await sendVerificationEmail(this.email, this.otp);
+    } catch (error) {
+      return next(error);
     }
-    next();
+  }
+  next();
 });
 
-const User = mongoose.models.user || mongoose.model('User', userSchema);
+const User = mongoose.models.user || mongoose.model("User", userSchema);
 export default User;
