@@ -1,4 +1,5 @@
 import express from "express";
+import dns from "dns";
 import dotenv from "dotenv";
 import connectDB from "./utils/db.js";
 import cookieParser from "cookie-parser";
@@ -14,6 +15,14 @@ import ReviewRouter from "./routes/review.routes.js";
 
 const app = express();
 dotenv.config({});
+
+// Force DNS resolution to use public resolvers to avoid ETIMEOUT on SRV/TXT lookups (e.g., Atlas)
+// This helps in environments where the default DNS blocks TXT/SRV queries
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch (err) {
+  console.error("Failed to set custom DNS servers:", err?.message || err);
+}
 connectDB();
 await connectCloudinary();
 
