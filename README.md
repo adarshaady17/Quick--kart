@@ -127,10 +127,46 @@ All endpoints are mounted in `backend/index.js` under `/api/v1/*` with JSON body
 - **Review** – per-product-per-user unique rating/comment with aggregates returned via API.
 
 ## Deployment
-- **Frontend**: https://quick-kart-two.vercel.app
-- **Backend**: https://quick-kart-navj.onrender.com
 
-Ensure environment variables match production domains (e.g., `FRONTEND_URL=https://quick-kart-two.vercel.app`) so cookies and CORS remain valid.
+### Backend (Vercel)
+The backend is configured for Vercel serverless deployment:
+
+1. **Install Vercel CLI** (if deploying via CLI):
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Deploy from backend directory**:
+   ```bash
+   cd backend
+   vercel
+   ```
+
+3. **Set Environment Variables in Vercel Dashboard**:
+   - Go to your project settings → Environment Variables
+   - Add all variables from `backend/.env`:
+     - `MONGO_URI`
+     - `SECRET_KEY`
+     - `FRONTEND_URL` (your frontend Vercel URL)
+     - `ADMIN_EMAIL`
+     - `ADMIN_PASSWORD`
+     - `CLOUD_NAME`
+     - `API_KEY` (Cloudinary)
+     - `API_SECRET` (Cloudinary)
+     - `RAZORPAY_KEY`
+     - `RAZORPAY_SECRET`
+     - `MAIL_HOST`
+     - `MAIL_USER`
+     - `MAIL_PASS`
+     - `NODE_ENV=production`
+
+4. **Production URL**: After deployment, Vercel will provide a URL like `https://your-project.vercel.app`
+
+### Frontend (Vercel)
+- **Frontend**: https://quick-kart-two.vercel.app
+- Update `VITE_BACKEND_URL` in frontend environment variables to your backend Vercel URL
+
+**Important**: Ensure environment variables match production domains (e.g., `FRONTEND_URL=https://quick-kart-two.vercel.app`) so cookies and CORS remain valid.
 
 ## Useful Commands
 | Location | Command | Purpose |
