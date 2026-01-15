@@ -25,21 +25,25 @@ try {
 }
 
 // Initialize database and Cloudinary connections (lazy initialization for Vercel)
-let dbConnected = false;
-let cloudinaryConnected = false;
 let initPromise = null;
 
 const initializeConnections = async () => {
+  // Return existing promise if initialization is in progress
   if (initPromise) return initPromise;
   
   initPromise = (async () => {
-    if (!dbConnected) {
+    try {
+      // Connect to MongoDB (handles connection reuse internally)
       await connectDB();
-      dbConnected = true;
-    }
-    if (!cloudinaryConnected) {
+      
+      // Configure Cloudinary (synchronous operation, safe to call multiple times)
       await connectCloudinary();
-      cloudinaryConnected = true;
+      
+      console.log("All connections initialized");
+    } catch (error) {
+      console.error("Failed to initialize connections:", error);
+      initPromise = null; // Reset on error to allow retry
+      throw error;
     }
   })();
   
@@ -53,7 +57,11 @@ app.use(async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Connection initialization error:", error);
-    res.status(500).json({ success: false, message: "Server initialization error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server initialization error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 });
 

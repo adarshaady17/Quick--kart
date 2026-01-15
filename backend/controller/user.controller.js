@@ -2,6 +2,7 @@ import User from "../models/user.js";
 import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import fs from "fs";
 
 export const registration = async (req, res) => {
   try {
@@ -247,19 +248,35 @@ export const updateProfilePhoto = async (req, res) => {
         .status(400)
         .json({ success: false, message: "No file uploaded" });
     }
+    
     // upload to cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       resource_type: "image",
       folder: "profile_photos",
       quality: "auto:good",
     });
+    
+    // Clean up local file after Cloudinary upload
+    if (req.file.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { profilePhoto: result.secure_url },
       { new: true }
     ).select("-password");
+    
     return res.json({ success: true, message: "Profile photo updated", user });
   } catch (error) {
+    // Clean up file on error
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error("Error cleaning up file:", cleanupError);
+      }
+    }
     return res.status(500).json({ success: false, message: error.message });
   }
 };
